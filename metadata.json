@@ -1,0 +1,6 @@
+{
+  "name": "Diploma Notes",
+  "description": "Comprehensive study notes portal for diploma students with branch, semester, and subject hierarchy, document previewer, single-click downloads, and admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
