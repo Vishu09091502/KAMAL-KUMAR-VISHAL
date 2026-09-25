@@ -77,7 +77,7 @@ fun AppHeader(
 
                 Column {
                     Text(
-                        text = "Diploma Notes",
+                        text = "Polymate Edu Hub",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
@@ -85,7 +85,7 @@ fun AppHeader(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Study Portal & Exam Prep",
+                        text = "Polytechnic & Diploma Hub",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

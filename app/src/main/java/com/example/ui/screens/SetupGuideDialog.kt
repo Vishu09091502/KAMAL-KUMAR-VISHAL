@@ -115,51 +115,52 @@ fun SetupGuideDialog(
                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
                         )
                     }
-                    Text(
-                        text = "1. Branches: id, name, code, iconName, description\n" +
-                               "2. Semesters: id, branchId (FK), semesterNumber (1-6), title\n" +
-                               "3. Subjects: id, semesterId (FK), branchId, name, code, description\n" +
-                               "4. Notes: id, subjectId (FK), title, description, fileType (PDF/DOCX/PPTX), fileSize, uploadDate, downloadCount, tags, content\n" +
-                               "5. AdminUsers: username, passwordHash (SHA-256), displayName, role",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                        Text(
+                            text = "1. Branches: id, name, code, iconName, description\n" +
+                                   "2. Semesters: id, branchId (FK), semesterNumber (1-6), title\n" +
+                                   "3. Subjects: id, semesterId (FK), branchId, name, code, description\n" +
+                                   "4. Notes: id, subjectId (FK), title, description, fileType (PDF/DOCX/PPTX), fileSize, uploadDate, downloadCount, tags, content\n" +
+                                   "5. SavedNotes (Offline Room DB): noteId, title, description, subjectName, branchCode, semesterNumber, content, savedAt, offlineNoteText\n" +
+                                   "6. AdminUsers: username, passwordHash (SHA-256), displayName, role",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontFamily = FontFamily.Monospace,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
 
-                // Server Execution & Instructions
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Terminal,
-                            contentDescription = "Terminal",
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Local Server & Android Deployment",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
-                        )
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant
-                    ) {
-                        Text(
-                            text = "# Run Android applet locally:\n" +
-                                   "$ gradle assembleDebug\n" +
-                                   "$ gradle installDebug\n\n" +
-                                   "# Node.js / Express Backend Setup:\n" +
-                                   "$ npm init -y && npm install express multer cors\n" +
-                                   "$ node server.js\n\n" +
-                                   "# Single-click downloads save directly to:\n" +
-                                   "/sdcard/Download/DiplomaNotes/",
-                            modifier = Modifier.padding(10.dp),
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
+                    // Server Execution & Instructions
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Terminal,
+                                contentDescription = "Terminal",
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Polymate Edu Hub Execution & Storage",
+                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant
+                        ) {
+                            Text(
+                                text = "# Room Local Persistence:\n" +
+                                       "• polymate_edu_hub_db (SQLite via Room KSP)\n" +
+                                       "• DAO & Reactive Flows with StateFlow\n\n" +
+                                       "# Single-click downloads save directly to:\n" +
+                                       "/sdcard/Download/PolymateEduHub/\n\n" +
+                                       "# Build & Install APK:\n" +
+                                       "$ gradle assembleDebug\n" +
+                                       "$ gradle installDebug",
+                                modifier = Modifier.padding(10.dp),
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                fontFamily = FontFamily.Monospace
+                            )
+                        }
                 }
             }
         },

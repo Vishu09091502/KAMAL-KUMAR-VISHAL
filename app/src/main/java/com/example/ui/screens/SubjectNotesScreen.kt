@@ -61,6 +61,7 @@ fun SubjectNotesScreen(
     val allSubjects by viewModel.allSubjects.collectAsStateWithLifecycle()
     val allNotes by viewModel.allNotes.collectAsStateWithLifecycle()
     val branches by viewModel.branches.collectAsStateWithLifecycle()
+    val savedNotes by viewModel.savedNotes.collectAsStateWithLifecycle()
     val currentAdmin by viewModel.currentAdmin.collectAsStateWithLifecycle()
 
     val subject = allSubjects.firstOrNull { it.id == subjectId }
@@ -212,10 +213,13 @@ fun SubjectNotesScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(subjectNotes, key = { it.id }) { note ->
+                        val isSaved = savedNotes.any { it.noteId == note.id }
                         NoteCard(
                             note = note,
                             onNoteClick = { onNavigateToNoteDetail(note.id) },
-                            onDownloadClick = { viewModel.downloadNote(context, note) }
+                            onDownloadClick = { viewModel.downloadNote(context, note) },
+                            isSaved = isSaved,
+                            onToggleSaveClick = { viewModel.toggleSaveForOffline(it) }
                         )
                     }
                 }

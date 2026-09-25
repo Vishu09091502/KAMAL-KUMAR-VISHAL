@@ -44,14 +44,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                DiplomaNotesApp()
+                PolymateEduHubApp()
             }
         }
     }
 }
 
 @Composable
-fun DiplomaNotesApp(
+fun PolymateEduHubApp(
     viewModel: NotesViewModel = viewModel()
 ) {
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Home) }

@@ -8,6 +8,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.AdminUser
 import com.example.data.model.Branch
 import com.example.data.model.Note
+import com.example.data.model.SavedNote
 import com.example.data.model.Semester
 import com.example.data.model.Subject
 import kotlinx.coroutines.CoroutineScope
@@ -15,13 +16,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Database(
-    entities = [Branch::class, Semester::class, Subject::class, Note::class, AdminUser::class],
-    version = 1,
+    entities = [
+        Branch::class,
+        Semester::class,
+        Subject::class,
+        Note::class,
+        AdminUser::class,
+        SavedNote::class
+    ],
+    version = 2,
     exportSchema = false
 )
 abstract class NotesDatabase : RoomDatabase() {
 
     abstract fun notesDao(): NotesDao
+    abstract fun savedNotesDao(): SavedNotesDao
 
     companion object {
         @Volatile
@@ -32,8 +41,9 @@ abstract class NotesDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     NotesDatabase::class.java,
-                    "diploma_notes_db"
+                    "polymate_edu_hub_db"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(NotesDatabaseCallback(scope))
                     .build()
                 INSTANCE = instance
@@ -48,12 +58,12 @@ abstract class NotesDatabase : RoomDatabase() {
                 super.onCreate(db)
                 INSTANCE?.let { database ->
                     scope.launch(Dispatchers.IO) {
-                        populateDatabase(database.notesDao())
+                        populateDatabase(database.notesDao(), database.savedNotesDao())
                     }
                 }
             }
 
-            suspend fun populateDatabase(dao: NotesDao) {
+            suspend fun populateDatabase(dao: NotesDao, savedDao: SavedNotesDao) {
                 // Populate Admin User
                 dao.insertAdmin(PrepopulatedData.defaultAdmin)
 
@@ -68,6 +78,9 @@ abstract class NotesDatabase : RoomDatabase() {
 
                 // Populate Notes
                 dao.insertNotes(PrepopulatedData.sampleNotes)
+
+                // Populate Initial Offline Saved Notes
+                savedDao.saveNotes(PrepopulatedData.initialSavedNotes)
             }
         }
     }

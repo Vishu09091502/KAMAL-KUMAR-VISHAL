@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Diploma Notes"
+rootProject.name = "Polymate Edu Hub"
 
 include(":app")

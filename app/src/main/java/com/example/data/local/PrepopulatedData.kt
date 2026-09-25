@@ -3,6 +3,7 @@ package com.example.data.local
 import com.example.data.model.AdminUser
 import com.example.data.model.Branch
 import com.example.data.model.Note
+import com.example.data.model.SavedNote
 import com.example.data.model.Semester
 import com.example.data.model.Subject
 import com.example.data.util.SecurityHelper
@@ -12,7 +13,7 @@ object PrepopulatedData {
     val defaultAdmin = AdminUser(
         username = "admin",
         passwordHash = SecurityHelper.hashPassword("admin123"),
-        displayName = "Diploma Notes Head Admin",
+        displayName = "Polymate Edu Hub SuperAdmin",
         role = "SuperAdmin"
     )
 
@@ -493,4 +494,36 @@ object PrepopulatedData {
             """.trimIndent()
         )
     )
+
+    val initialSavedNotes: List<SavedNote> by lazy {
+        val dsaNote = sampleNotes.firstOrNull { it.id == "note_dsa_trees_graphs" }
+            ?: sampleNotes.firstOrNull { it.id == "note_dsa_stacks_queues" }
+            ?: sampleNotes.firstOrNull()
+
+        if (dsaNote != null) {
+            listOf(
+                SavedNote(
+                    noteId = dsaNote.id,
+                    title = dsaNote.title,
+                    description = dsaNote.description,
+                    subjectName = "Data Structures & Algorithms",
+                    subjectId = dsaNote.subjectId,
+                    branchCode = "CSE",
+                    branchId = dsaNote.branchId,
+                    semesterNumber = 3,
+                    fileType = dsaNote.fileType,
+                    fileSize = dsaNote.fileSize,
+                    fileName = dsaNote.fileName,
+                    filePath = dsaNote.filePath,
+                    uploadDate = dsaNote.uploadDate,
+                    tags = dsaNote.tags,
+                    content = dsaNote.content,
+                    savedAt = System.currentTimeMillis() - 3600000L * 12,
+                    offlineNoteText = "Important for semester examinations! Review binary search tree balancing and rotation rules."
+                )
+            )
+        } else {
+            emptyList()
+        }
+    }
 }

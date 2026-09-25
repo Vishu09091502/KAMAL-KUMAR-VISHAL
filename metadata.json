@@ -1,6 +1,6 @@
 {
-  "name": "Diploma Notes",
-  "description": "Comprehensive study notes portal for diploma students with branch, semester, and subject hierarchy, document previewer, single-click downloads, and admin management.",
+  "name": "Polymate Edu Hub",
+  "description": "Polymate Edu Hub - comprehensive study notes and exam preparation portal for diploma and polytechnic students with Room offline database persistence, single-click downloads, and admin management.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

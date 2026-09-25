@@ -8,7 +8,6 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import com.example.data.model.Note
 import java.io.File
 import java.io.FileOutputStream
@@ -33,12 +32,12 @@ object FileDownloadHelper {
                 else -> ".txt"
             }
             val sanitizedTitle = note.title.replace(Regex("[^a-zA-Z0-9_-]"), "_")
-            val fileName = "DiplomaNotes_${sanitizedTitle}_v1$extension"
+            val fileName = "Polymate_${sanitizedTitle}_v1$extension"
             val mimeType = getMimeType(note.fileType)
 
             val documentContent = buildString {
                 append("==================================================\n")
-                append("       DIPLOMA ENGINEERING STUDY NOTES PORTAL      \n")
+                append("       POLYMATE EDU HUB - STUDY NOTES PORTAL      \n")
                 append("==================================================\n")
                 append("TITLE       : ${note.title}\n")
                 append("BRANCH ID   : ${note.branchId}\n")
@@ -55,10 +54,10 @@ object FileDownloadHelper {
                 append("--------------------------------------------------\n")
                 append("DETAILED SYLLABUS & COMPREHENSIVE REVISION MODULE:\n")
                 append("--------------------------------------------------\n")
-                append(note.content.ifBlank { "Comprehensive curriculum-aligned study module prepared for diploma examinations." })
+                append(note.content.ifBlank { "Comprehensive curriculum-aligned study module prepared for diploma and polytechnic examinations." })
                 append("\n\n==================================================\n")
-                append("Downloaded via Diploma Notes Android Portal\n")
-                append("Single-Click Verified Document\n")
+                append("Downloaded via Polymate Edu Hub Android App\n")
+                append("Single-Click Verified Document - Stored in Room DB\n")
                 append("==================================================\n")
             }
 
@@ -66,7 +65,7 @@ object FileDownloadHelper {
                 val contentValues = ContentValues().apply {
                     put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
                     put(MediaStore.MediaColumns.MIME_TYPE, mimeType)
-                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/DiplomaNotes")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/PolymateEduHub")
                 }
 
                 val resolver = context.contentResolver
@@ -75,7 +74,7 @@ object FileDownloadHelper {
                     resolver.openOutputStream(uri)?.use { outputStream ->
                         outputStream.write(documentContent.toByteArray(Charsets.UTF_8))
                     }
-                    Toast.makeText(context, "Saved to Downloads/DiplomaNotes/$fileName", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Saved to Downloads/PolymateEduHub/$fileName", Toast.LENGTH_LONG).show()
                     return true
                 }
             }
@@ -100,10 +99,10 @@ object FileDownloadHelper {
     fun shareNoteContent(context: Context, note: Note) {
         val shareIntent = Intent(Intent.ACTION_SEND).apply {
             type = "text/plain"
-            putExtra(Intent.EXTRA_SUBJECT, "Diploma Study Note: ${note.title}")
+            putExtra(Intent.EXTRA_SUBJECT, "Polymate Edu Hub Study Note: ${note.title}")
             putExtra(
                 Intent.EXTRA_TEXT,
-                "Check out this Diploma Study Note:\n\n*${note.title}*\n${note.description}\n\nTags: ${note.tags}\nFile: ${note.fileName} (${note.fileSize})\n\n-- Shared from Diploma Notes Portal"
+                "Check out this Study Note on Polymate Edu Hub:\n\n*${note.title}*\n${note.description}\n\nTags: ${note.tags}\nFile: ${note.fileName} (${note.fileSize})\n\n-- Shared from Polymate Edu Hub"
             )
         }
         context.startActivity(Intent.createChooser(shareIntent, "Share Note"))

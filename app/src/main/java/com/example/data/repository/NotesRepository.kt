@@ -2,9 +2,11 @@ package com.example.data.repository
 
 import com.example.data.local.NotesDao
 import com.example.data.local.PrepopulatedData
+import com.example.data.local.SavedNotesDao
 import com.example.data.model.AdminUser
 import com.example.data.model.Branch
 import com.example.data.model.Note
+import com.example.data.model.SavedNote
 import com.example.data.model.Semester
 import com.example.data.model.Subject
 import com.example.data.util.SecurityHelper
@@ -13,9 +15,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.withContext
 
-class NotesRepository(private val notesDao: NotesDao) {
+class NotesRepository(
+    private val notesDao: NotesDao,
+    private val savedNotesDao: SavedNotesDao
+) {
 
-    // Pre-check & auto seed if needed (e.g. on fresh migration)
+    // Pre-check & auto seed if needed (e.g. on fresh installation or migration)
     suspend fun ensureDataSeeded() = withContext(Dispatchers.IO) {
         val branchCount = notesDao.getBranchCount().firstOrNull() ?: 0
         if (branchCount == 0) {
@@ -24,6 +29,10 @@ class NotesRepository(private val notesDao: NotesDao) {
             notesDao.insertSemesters(PrepopulatedData.generateSemesters())
             notesDao.insertSubjects(PrepopulatedData.subjects)
             notesDao.insertNotes(PrepopulatedData.sampleNotes)
+        }
+        val savedCount = savedNotesDao.getSavedNotesCount().firstOrNull() ?: 0
+        if (savedCount == 0) {
+            savedNotesDao.saveNotes(PrepopulatedData.initialSavedNotes)
         }
     }
 
@@ -65,10 +74,61 @@ class NotesRepository(private val notesDao: NotesDao) {
 
     suspend fun insertNote(note: Note) = notesDao.insertNote(note)
     suspend fun updateNote(note: Note) = notesDao.updateNote(note)
-    suspend fun deleteNote(id: String) = notesDao.deleteNoteById(id)
+    suspend fun deleteNote(id: String) = withContext(Dispatchers.IO) {
+        notesDao.deleteNoteById(id)
+        savedNotesDao.removeSavedNote(id)
+    }
     suspend fun incrementDownload(noteId: String) = notesDao.incrementDownloadCount(noteId)
     val noteCount: Flow<Int> = notesDao.getNoteCount()
     val totalDownloads: Flow<Int?> = notesDao.getTotalDownloads()
+
+    // --- Offline Saved Notes (Room Database) ---
+    val allSavedNotes: Flow<List<SavedNote>> = savedNotesDao.getAllSavedNotes()
+    val savedNotesCount: Flow<Int> = savedNotesDao.getSavedNotesCount()
+
+    fun isNoteSaved(noteId: String): Flow<Boolean> = savedNotesDao.isNoteSaved(noteId)
+    fun getSavedNote(noteId: String): Flow<SavedNote?> = savedNotesDao.getSavedNoteById(noteId)
+    fun searchSavedNotes(query: String): Flow<List<SavedNote>> = savedNotesDao.searchSavedNotes(query)
+
+    suspend fun saveNoteForOffline(
+        note: Note,
+        subjectName: String,
+        branchCode: String,
+        semesterNumber: Int,
+        notesText: String = ""
+    ) = withContext(Dispatchers.IO) {
+        val saved = SavedNote(
+            noteId = note.id,
+            title = note.title,
+            description = note.description,
+            subjectName = subjectName,
+            subjectId = note.subjectId,
+            branchCode = branchCode,
+            branchId = note.branchId,
+            semesterNumber = semesterNumber,
+            fileType = note.fileType,
+            fileSize = note.fileSize,
+            fileName = note.fileName,
+            filePath = note.filePath,
+            uploadDate = note.uploadDate,
+            tags = note.tags,
+            content = note.content,
+            savedAt = System.currentTimeMillis(),
+            offlineNoteText = notesText
+        )
+        savedNotesDao.saveNote(saved)
+    }
+
+    suspend fun removeSavedNote(noteId: String) = withContext(Dispatchers.IO) {
+        savedNotesDao.removeSavedNote(noteId)
+    }
+
+    suspend fun updateSavedNoteNotes(noteId: String, notesText: String) = withContext(Dispatchers.IO) {
+        val existing = savedNotesDao.getSavedNoteDirect(noteId)
+        if (existing != null) {
+            savedNotesDao.updateSavedNote(existing.copy(offlineNoteText = notesText))
+        }
+    }
 
     // Authentication
     suspend fun authenticateAdmin(username: String, passwordAttempt: String): AdminUser? = withContext(Dispatchers.IO) {

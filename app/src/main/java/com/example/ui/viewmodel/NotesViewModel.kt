@@ -8,15 +8,18 @@ import com.example.data.local.NotesDatabase
 import com.example.data.model.AdminUser
 import com.example.data.model.Branch
 import com.example.data.model.Note
+import com.example.data.model.SavedNote
 import com.example.data.model.Semester
 import com.example.data.model.Subject
 import com.example.data.repository.NotesRepository
 import com.example.data.util.FileDownloadHelper
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -36,7 +39,7 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         val db = NotesDatabase.getDatabase(application, viewModelScope)
-        repository = NotesRepository(db.notesDao())
+        repository = NotesRepository(db.notesDao(), db.savedNotesDao())
         viewModelScope.launch {
             repository.ensureDataSeeded()
         }
@@ -54,6 +57,13 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     val allNotes: StateFlow<List<Note>> = repository.allNotes
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Offline Saved Notes State (Room Database)
+    val savedNotes: StateFlow<List<SavedNote>> = repository.allSavedNotes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val savedNotesCount: StateFlow<Int> = repository.savedNotesCount
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     private val _selectedBranchId = MutableStateFlow<String?>("branch_cse")
     val selectedBranchId = _selectedBranchId.asStateFlow()
@@ -129,6 +139,45 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         _actionMessage.value = null
     }
 
+    // --- Offline Saved Materials (Room Database) ---
+    fun isNoteSaved(noteId: String): Flow<Boolean> = repository.isNoteSaved(noteId)
+
+    fun toggleSaveForOffline(note: Note) {
+        viewModelScope.launch {
+            val isSaved = repository.isNoteSaved(note.id).firstOrNull() ?: false
+            if (isSaved) {
+                repository.removeSavedNote(note.id)
+                _actionMessage.value = "Removed '${note.title}' from offline saved materials"
+            } else {
+                val subject = allSubjects.value.firstOrNull { it.id == note.subjectId }
+                val branch = branches.value.firstOrNull { it.id == note.branchId }
+                val semNumber = allSemesters.value.firstOrNull { it.id == note.semesterId }?.semesterNumber ?: 3
+
+                repository.saveNoteForOffline(
+                    note = note,
+                    subjectName = subject?.name ?: "Diploma Subject",
+                    branchCode = branch?.code ?: "ENGG",
+                    semesterNumber = semNumber
+                )
+                _actionMessage.value = "Saved '${note.title}' to Room Database for offline access"
+            }
+        }
+    }
+
+    fun removeSavedNote(noteId: String) {
+        viewModelScope.launch {
+            repository.removeSavedNote(noteId)
+            _actionMessage.value = "Note removed from offline storage"
+        }
+    }
+
+    fun updateSavedNoteNotes(noteId: String, notesText: String) {
+        viewModelScope.launch {
+            repository.updateSavedNoteNotes(noteId, notesText)
+            _actionMessage.value = "Study notes saved offline"
+        }
+    }
+
     // --- Admin Auth ---
     fun loginAdmin(username: String, passwordAttempt: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
@@ -159,7 +208,19 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
             val success = FileDownloadHelper.downloadNote(context, note)
             if (success) {
                 repository.incrementDownload(note.id)
-                _actionMessage.value = "Downloaded ${note.fileName} to Downloads folder"
+                // Also auto-cache to offline Room DB so user can access it anytime offline
+                val subject = allSubjects.value.firstOrNull { it.id == note.subjectId }
+                val branch = branches.value.firstOrNull { it.id == note.branchId }
+                val semNumber = allSemesters.value.firstOrNull { it.id == note.semesterId }?.semesterNumber ?: 3
+
+                repository.saveNoteForOffline(
+                    note = note,
+                    subjectName = subject?.name ?: "Diploma Subject",
+                    branchCode = branch?.code ?: "ENGG",
+                    semesterNumber = semNumber
+                )
+
+                _actionMessage.value = "Downloaded & saved to Room offline database!"
             }
         }
     }
@@ -241,12 +302,13 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         fileType: String,
         fileSize: String,
         tags: String,
-        content: String
+        content: String,
+        fileName: String? = null
     ) {
         viewModelScope.launch {
             val extension = fileType.lowercase()
             val sanitizedName = title.take(20).replace(Regex("[^a-zA-Z0-9]"), "_")
-            val fileName = "${sanitizedName}_Notes.$extension"
+            val resolvedFileName = if (!fileName.isNullOrBlank()) fileName.trim() else "${sanitizedName}_Notes.$extension"
             val note = Note(
                 id = "note_" + System.currentTimeMillis(),
                 subjectId = subjectId,
@@ -256,8 +318,8 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
                 description = description,
                 fileType = fileType,
                 fileSize = if (fileSize.isBlank()) "3.5 MB" else fileSize,
-                fileName = fileName,
-                filePath = "uploads/$fileName",
+                fileName = resolvedFileName,
+                filePath = "uploads/$resolvedFileName",
                 uploadDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date()),
                 tags = tags,
                 downloadCount = 0,
